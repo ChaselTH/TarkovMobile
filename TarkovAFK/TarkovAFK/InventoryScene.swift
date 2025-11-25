@@ -334,6 +334,14 @@ class InventoryScene: BaseScene {
         let moonshine = InventoryItemNode(textureName: "FierceMoonshine", gridSize: GridSize(width: 1, height: 2), cellSize: cellSize, gridPosition: GridPosition(column: 2, row: 2))
         place(item: moonshine, at: moonshine.gridPosition)
         items.append(moonshine)
+        
+        let icedGreenTea = InventoryItemNode(textureName: "IcedGreenTea", gridSize: GridSize(width: 1, height: 1), cellSize: cellSize, gridPosition: GridPosition(column: 4, row: 2))
+        place(item: icedGreenTea, at: icedGreenTea.gridPosition)
+        items.append(icedGreenTea)
+
+        let pureWater = InventoryItemNode(textureName: "PureWater", gridSize: GridSize(width: 2, height: 2), cellSize: cellSize, gridPosition: GridPosition(column: 6, row: 2))
+        place(item: pureWater, at: pureWater.gridPosition)
+        items.append(pureWater)
     }
 
     private func point(for position: GridPosition, size: GridSize) -> CGPoint {
