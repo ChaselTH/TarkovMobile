@@ -14,7 +14,7 @@ class InventoryScene: BaseScene {
 
     private let scrollBarWidth: CGFloat = 5
     private let scrollBarInset: CGFloat = 8
-    private let scrollBarTrackHeightFactor: CGFloat = 0.5
+    private let scrollBarTrackHeightFactor: CGFloat = 1.0
     private var scrollBarTrack: SKShapeNode?
     private var scrollBarThumb: SKShapeNode?
 
@@ -167,7 +167,7 @@ class InventoryScene: BaseScene {
         let minY = contentHalf - areaHalf
         let progress = (contentNode.position.y - maxY) / (minY - maxY)
         let availableTravel = trackHeight - thumbHeight
-        let thumbOffset = (progress * availableTravel) - trackHeight / 2 + thumbHeight / 2
+        let thumbOffset = ((1 - progress) * availableTravel) - trackHeight / 2 + thumbHeight / 2
         thumb.position = CGPoint(x: track.position.x, y: track.position.y + thumbOffset)
     }
 
