@@ -6,6 +6,11 @@ class InventoryScene: BaseScene {
     private var contentNode = SKNode()
     private var dragStartPoint: CGPoint?
     private var contentStartY: CGFloat = 0
+    private var lastTouchLocation: CGPoint?
+    private var lastTouchTimestamp: TimeInterval?
+    private var velocity: CGFloat = 0
+    private var isDecelerating = false
+    private var lastUpdateTime: TimeInterval?
 
     private var scrollAreaHeight: CGFloat {
         size.height * 0.55
@@ -24,6 +29,32 @@ class InventoryScene: BaseScene {
         removeAllChildren()
         super.didMove(to: view)
         setupGrid()
+    }
+
+    override func update(_ currentTime: TimeInterval) {
+        super.update(currentTime)
+
+        defer { lastUpdateTime = currentTime }
+
+        guard isDecelerating else { return }
+        guard let previousTime = lastUpdateTime else { return }
+
+        let deltaTime = currentTime - previousTime
+        let decayRate: CGFloat = 0.975
+        let framesPerSecond: CGFloat = 60
+        velocity *= pow(decayRate, CGFloat(deltaTime * framesPerSecond))
+
+        let deltaY = velocity * CGFloat(deltaTime)
+        let desiredY = contentNode.position.y + deltaY
+        let clampedY = clampedContentPosition(for: desiredY)
+        contentNode.position.y = clampedY
+
+        let reachedBoundary = clampedY != desiredY
+        let velocityIsLow = abs(velocity) < 8
+        if reachedBoundary || velocityIsLow {
+            isDecelerating = false
+            velocity = 0
+        }
     }
 
     private func setupGrid() {
@@ -71,6 +102,10 @@ class InventoryScene: BaseScene {
         if location.y <= scrollAreaHeight {
             dragStartPoint = location
             contentStartY = contentNode.position.y
+            isDecelerating = false
+            velocity = 0
+            lastTouchLocation = location
+            lastTouchTimestamp = touch.timestamp
         } else {
             dragStartPoint = nil
         }
@@ -83,10 +118,26 @@ class InventoryScene: BaseScene {
         let deltaY = location.y - start.y
         let desiredY = contentStartY + deltaY
         contentNode.position.y = clampedContentPosition(for: desiredY)
+
+        if let lastLocation = lastTouchLocation, let lastTimestamp = lastTouchTimestamp {
+            let timeDelta = touch.timestamp - lastTimestamp
+            if timeDelta > 0 {
+                velocity = (location.y - lastLocation.y) / CGFloat(timeDelta)
+            }
+        }
+
+        lastTouchLocation = location
+        lastTouchTimestamp = touch.timestamp
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         dragStartPoint = nil
+        if abs(velocity) > 20 {
+            isDecelerating = true
+        } else {
+            velocity = 0
+            isDecelerating = false
+        }
         super.touchesEnded(touches, with: event)
     }
 }
