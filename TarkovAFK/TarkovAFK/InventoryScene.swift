@@ -12,6 +12,12 @@ class InventoryScene: BaseScene {
     private var isDecelerating = false
     private var lastUpdateTime: TimeInterval?
 
+    private let scrollBarWidth: CGFloat = 5
+    private let scrollBarInset: CGFloat = 8
+    private let scrollBarTrackHeightFactor: CGFloat = 0.5
+    private var scrollBarTrack: SKShapeNode?
+    private var scrollBarThumb: SKShapeNode?
+
     private var scrollAreaHeight: CGFloat {
         size.height * 0.55
     }
@@ -49,11 +55,14 @@ class InventoryScene: BaseScene {
         let clampedY = clampedContentPosition(for: desiredY)
         contentNode.position.y = clampedY
 
+        updateScrollBar()
+
         let reachedBoundary = clampedY != desiredY
         let velocityIsLow = abs(velocity) < 8
         if reachedBoundary || velocityIsLow {
             isDecelerating = false
             velocity = 0
+            scheduleHideScrollBar()
         }
     }
 
@@ -85,6 +94,8 @@ class InventoryScene: BaseScene {
         }
 
         contentNode.position = CGPoint(x: 0, y: scrollAreaHeight / 2 - contentHeight / 2)
+
+        setupScrollBar()
     }
 
     private func clampedContentPosition(for desiredY: CGFloat) -> CGFloat {
@@ -93,6 +104,71 @@ class InventoryScene: BaseScene {
         let maxY = areaHalf - contentHalf
         let minY = contentHalf - areaHalf
         return min(max(desiredY, maxY), minY)
+    }
+
+    private func setupScrollBar() {
+        scrollBarTrack?.removeFromParent()
+        scrollBarThumb?.removeFromParent()
+
+        let trackHeight = scrollAreaHeight * scrollBarTrackHeightFactor
+        let trackRect = CGRect(x: -scrollBarWidth / 2, y: -trackHeight / 2, width: scrollBarWidth, height: trackHeight)
+        let track = SKShapeNode(rect: trackRect, cornerRadius: scrollBarWidth / 2)
+        track.fillColor = SKColor(white: 1, alpha: 0.08)
+        track.strokeColor = .clear
+        track.position = CGPoint(x: size.width - scrollBarInset - scrollBarWidth / 2, y: scrollAreaHeight - trackHeight / 2)
+        track.alpha = 0
+        addChild(track)
+        scrollBarTrack = track
+
+        let thumb = SKShapeNode(rect: trackRect, cornerRadius: scrollBarWidth / 2)
+        thumb.fillColor = SKColor(white: 1, alpha: 0.35)
+        thumb.strokeColor = .clear
+        thumb.position = track.position
+        thumb.alpha = 0
+        addChild(thumb)
+        scrollBarThumb = thumb
+
+        updateScrollBar()
+    }
+
+    private func showScrollBar() {
+        let fadeIn = SKAction.fadeAlpha(to: 1, duration: 0.15)
+        scrollBarTrack?.run(fadeIn, withKey: "fade")
+        scrollBarThumb?.run(fadeIn, withKey: "fade")
+    }
+
+    private func scheduleHideScrollBar() {
+        let fadeOut = SKAction.sequence([
+            SKAction.wait(forDuration: 0.6),
+            SKAction.fadeAlpha(to: 0, duration: 0.25)
+        ])
+        scrollBarTrack?.run(fadeOut, withKey: "fade")
+        scrollBarThumb?.run(fadeOut, withKey: "fade")
+    }
+
+    private func updateScrollBar() {
+        guard let track = scrollBarTrack, let thumb = scrollBarThumb else { return }
+
+        guard contentHeight > scrollAreaHeight else {
+            track.alpha = 0
+            thumb.alpha = 0
+            return
+        }
+
+        let trackHeight = track.frame.height
+        let visibleRatio = scrollAreaHeight / contentHeight
+        let thumbHeight = max(trackHeight * visibleRatio, scrollBarWidth * 2)
+
+        thumb.path = CGPath(roundedRect: CGRect(x: -scrollBarWidth / 2, y: -thumbHeight / 2, width: scrollBarWidth, height: thumbHeight), cornerWidth: scrollBarWidth / 2, cornerHeight: scrollBarWidth / 2, transform: nil)
+
+        let areaHalf = scrollAreaHeight / 2
+        let contentHalf = contentHeight / 2
+        let maxY = areaHalf - contentHalf
+        let minY = contentHalf - areaHalf
+        let progress = (contentNode.position.y - maxY) / (minY - maxY)
+        let availableTravel = trackHeight - thumbHeight
+        let thumbOffset = (progress * availableTravel) - trackHeight / 2 + thumbHeight / 2
+        thumb.position = CGPoint(x: track.position.x, y: track.position.y + thumbOffset)
     }
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -106,6 +182,7 @@ class InventoryScene: BaseScene {
             velocity = 0
             lastTouchLocation = location
             lastTouchTimestamp = touch.timestamp
+            showScrollBar()
         } else {
             dragStartPoint = nil
         }
@@ -118,6 +195,8 @@ class InventoryScene: BaseScene {
         let deltaY = location.y - start.y
         let desiredY = contentStartY + deltaY
         contentNode.position.y = clampedContentPosition(for: desiredY)
+        showScrollBar()
+        updateScrollBar()
 
         if let lastLocation = lastTouchLocation, let lastTimestamp = lastTouchTimestamp {
             let timeDelta = touch.timestamp - lastTimestamp
@@ -134,10 +213,17 @@ class InventoryScene: BaseScene {
         dragStartPoint = nil
         if abs(velocity) > 20 {
             isDecelerating = true
+            showScrollBar()
         } else {
             velocity = 0
             isDecelerating = false
+            scheduleHideScrollBar()
         }
         super.touchesEnded(touches, with: event)
+    }
+
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        scheduleHideScrollBar()
+        super.touchesCancelled(touches, with: event)
     }
 }
