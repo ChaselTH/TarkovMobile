@@ -81,9 +81,7 @@ class InventoryScene: BaseScene {
         }
 
         private static func trimmedTexture(from texture: SKTexture) -> (SKTexture, CGSize) {
-            guard let cgImage = texture.cgImage() else {
-                return (texture, texture.size())
-            }
+            let cgImage = texture.cgImage()
 
             guard let dataProvider = cgImage.dataProvider, let data = dataProvider.data, let bytes = CFDataGetBytePtr(data) else {
                 return (texture, texture.size())
