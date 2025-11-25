@@ -55,11 +55,17 @@ class GameScene: SKScene {
         }
     }
 
-    private func presentPlaceholder(for item: MenuItem) {
-        let placeholder = PlaceholderScene(size: size, title: item.rawValue)
-        placeholder.scaleMode = scaleMode
+    private func presentScene(for item: MenuItem) {
+        let nextScene: SKScene
+        switch item {
+        case .inventory:
+            nextScene = InventoryScene(size: size)
+        default:
+            nextScene = PlaceholderScene(size: size, title: item.rawValue)
+        }
+        nextScene.scaleMode = scaleMode
         let transition = SKTransition.fade(withDuration: 0.3)
-        view?.presentScene(placeholder, transition: transition)
+        view?.presentScene(nextScene, transition: transition)
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -67,7 +73,7 @@ class GameScene: SKScene {
         let nodesAtPoint = nodes(at: location)
         for node in nodesAtPoint {
             if let name = node.name, let item = MenuItem(rawValue: name) {
-                presentPlaceholder(for: item)
+                presentScene(for: item)
                 return
             }
         }
