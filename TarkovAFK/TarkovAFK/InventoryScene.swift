@@ -16,12 +16,26 @@ class InventoryScene: BaseScene {
         var gridPosition: GridPosition
         private let sprite: SKSpriteNode
         private let highlight: SKShapeNode
+        private let textureSize: CGSize
+
+        private static func scaledSize(for original: CGSize, targetWidth: CGFloat, targetHeight: CGFloat) -> CGSize {
+            guard original.width > 0, original.height > 0 else {
+                return CGSize(width: targetWidth, height: targetHeight)
+            }
+
+            let scale = min(targetWidth / original.width, targetHeight / original.height)
+            return CGSize(width: original.width * scale, height: original.height * scale)
+        }
 
         init(textureName: String, gridSize: GridSize, cellSize: CGFloat, gridPosition: GridPosition) {
             self.gridSize = gridSize
             self.gridPosition = gridPosition
-            sprite = SKSpriteNode(texture: SKTexture(imageNamed: textureName))
-            sprite.size = CGSize(width: cellSize * CGFloat(gridSize.width) - 6, height: cellSize * CGFloat(gridSize.height) - 6)
+            let texture = SKTexture(imageNamed: textureName)
+            textureSize = texture.size()
+            sprite = SKSpriteNode(texture: texture)
+            let targetWidth = cellSize * CGFloat(gridSize.width) - 6
+            let targetHeight = cellSize * CGFloat(gridSize.height) - 6
+            sprite.size = Self.scaledSize(for: textureSize, targetWidth: targetWidth, targetHeight: targetHeight)
             sprite.anchorPoint = CGPoint(x: 0.5, y: 0.5)
             sprite.zPosition = 10
 
@@ -50,8 +64,11 @@ class InventoryScene: BaseScene {
         }
 
         func updateSize(with cellSize: CGFloat) {
-            sprite.size = CGSize(width: cellSize * CGFloat(gridSize.width) - 6, height: cellSize * CGFloat(gridSize.height) - 6)
-            highlight.path = CGPath(roundedRect: CGRect(origin: .init(x: -sprite.size.width / 2 - 3, y: -sprite.size.height / 2 - 3), size: CGSize(width: sprite.size.width + 6, height: sprite.size.height + 6)), cornerWidth: 4, cornerHeight: 4, transform: nil)
+            let targetWidth = cellSize * CGFloat(gridSize.width) - 6
+            let targetHeight = cellSize * CGFloat(gridSize.height) - 6
+            let scaledSize = Self.scaledSize(for: textureSize, targetWidth: targetWidth, targetHeight: targetHeight)
+            sprite.size = scaledSize
+            highlight.path = CGPath(roundedRect: CGRect(origin: .init(x: -scaledSize.width / 2 - 3, y: -scaledSize.height / 2 - 3), size: CGSize(width: scaledSize.width + 6, height: scaledSize.height + 6)), cornerWidth: 4, cornerHeight: 4, transform: nil)
         }
     }
 
