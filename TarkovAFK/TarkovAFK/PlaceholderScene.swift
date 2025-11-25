@@ -6,13 +6,10 @@
 //
 
 import SpriteKit
-import UIKit
 
 class PlaceholderScene: SKScene {
 
     private let titleText: String
-    private let backButtonName = "backButton"
-    private var edgePanGesture: UIScreenEdgePanGestureRecognizer?
 
     init(size: CGSize, title: String) {
         self.titleText = title
@@ -29,13 +26,6 @@ class PlaceholderScene: SKScene {
         removeAllChildren()
         setupTitle()
         setupBackButton()
-        addEdgePanGesture(to: view)
-    }
-
-    override func willMove(from view: SKView) {
-        if let gesture = edgePanGesture {
-            view.removeGestureRecognizer(gesture)
-        }
     }
 
     private func setupTitle() {
@@ -50,41 +40,28 @@ class PlaceholderScene: SKScene {
     }
 
     private func setupBackButton() {
-        let backButton = SKLabelNode(text: "←")
-        backButton.fontName = "AvenirNext-Bold"
-        backButton.fontSize = 28
-        backButton.fontColor = SKColor(red: 198/255, green: 210/255, blue: 226/255, alpha: 1)
-        backButton.position = CGPoint(x: 30, y: frame.maxY - 50)
-        backButton.name = backButtonName
-        backButton.horizontalAlignmentMode = .left
+        let backButton = SKLabelNode(text: "返回")
+        backButton.fontName = "AvenirNext-DemiBold"
+        backButton.fontSize = 24
+        backButton.fontColor = SKColor(red: 137/255, green: 196/255, blue: 244/255, alpha: 1)
+        backButton.position = CGPoint(x: frame.midX, y: frame.midY - 100)
+        backButton.name = "backButton"
+        backButton.horizontalAlignmentMode = .center
         backButton.verticalAlignmentMode = .center
         addChild(backButton)
-    }
-
-    private func addEdgePanGesture(to view: SKView) {
-        let edgePan = UIScreenEdgePanGestureRecognizer(target: self, action: #selector(handleEdgePan(_:)))
-        edgePan.edges = .left
-        view.addGestureRecognizer(edgePan)
-        edgePanGesture = edgePan
-    }
-
-    @objc private func handleEdgePan(_ gesture: UIScreenEdgePanGestureRecognizer) {
-        if gesture.state == .recognized {
-            goBackToMenu()
-        }
     }
 
     private func goBackToMenu() {
         let menuScene = GameScene(size: size)
         menuScene.scaleMode = scaleMode
-        let transition = SKTransition.push(with: .left, duration: 0.3)
+        let transition = SKTransition.fade(withDuration: 0.3)
         view?.presentScene(menuScene, transition: transition)
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let location = touches.first?.location(in: self) else { return }
         let nodesAtPoint = nodes(at: location)
-        for node in nodesAtPoint where node.name == backButtonName {
+        for node in nodesAtPoint where node.name == "backButton" {
             goBackToMenu()
             return
         }
