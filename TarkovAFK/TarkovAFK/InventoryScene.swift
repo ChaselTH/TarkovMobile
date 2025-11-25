@@ -16,16 +16,24 @@ class InventoryScene: BaseScene {
         var gridPosition: GridPosition
         private let sprite: SKSpriteNode
         private let highlight: SKShapeNode
+        private var targetSize: CGSize
+        private let padding: CGFloat = 6
+        private let trimmedTextureSize: CGSize
 
         init(textureName: String, gridSize: GridSize, cellSize: CGFloat, gridPosition: GridPosition) {
             self.gridSize = gridSize
             self.gridPosition = gridPosition
-            sprite = SKSpriteNode(texture: SKTexture(imageNamed: textureName))
-            sprite.size = CGSize(width: cellSize * CGFloat(gridSize.width) - 6, height: cellSize * CGFloat(gridSize.height) - 6)
+            let originalTexture = SKTexture(imageNamed: textureName)
+            let (trimmedTexture, trimmedSize) = InventoryItemNode.trimmedTexture(from: originalTexture)
+            trimmedTextureSize = trimmedSize
+            targetSize = InventoryItemNode.targetSize(for: gridSize, cellSize: cellSize)
+
+            sprite = SKSpriteNode(texture: trimmedTexture)
+            sprite.size = InventoryItemNode.fittedSize(for: trimmedSize, in: targetSize, padding: padding)
             sprite.anchorPoint = CGPoint(x: 0.5, y: 0.5)
             sprite.zPosition = 10
 
-            highlight = SKShapeNode(rectOf: CGSize(width: sprite.size.width + 6, height: sprite.size.height + 6), cornerRadius: 4)
+            highlight = SKShapeNode(rectOf: targetSize, cornerRadius: 4)
             highlight.strokeColor = .white
             highlight.lineWidth = 3
             highlight.fillColor = .clear
@@ -50,8 +58,70 @@ class InventoryScene: BaseScene {
         }
 
         func updateSize(with cellSize: CGFloat) {
-            sprite.size = CGSize(width: cellSize * CGFloat(gridSize.width) - 6, height: cellSize * CGFloat(gridSize.height) - 6)
-            highlight.path = CGPath(roundedRect: CGRect(origin: .init(x: -sprite.size.width / 2 - 3, y: -sprite.size.height / 2 - 3), size: CGSize(width: sprite.size.width + 6, height: sprite.size.height + 6)), cornerWidth: 4, cornerHeight: 4, transform: nil)
+            targetSize = InventoryItemNode.targetSize(for: gridSize, cellSize: cellSize)
+            sprite.size = InventoryItemNode.fittedSize(for: trimmedTextureSize, in: targetSize, padding: padding)
+            highlight.path = CGPath(roundedRect: CGRect(origin: CGPoint(x: -targetSize.width / 2, y: -targetSize.height / 2), size: targetSize), cornerWidth: 4, cornerHeight: 4, transform: nil)
+        }
+
+        private static func targetSize(for gridSize: GridSize, cellSize: CGFloat) -> CGSize {
+            CGSize(width: cellSize * CGFloat(gridSize.width), height: cellSize * CGFloat(gridSize.height))
+        }
+
+        private static func fittedSize(for contentSize: CGSize, in targetSize: CGSize, padding: CGFloat) -> CGSize {
+            let availableWidth = max(targetSize.width - padding, 0)
+            let availableHeight = max(targetSize.height - padding, 0)
+            guard contentSize.width > 0, contentSize.height > 0 else {
+                return CGSize(width: availableWidth, height: availableHeight)
+            }
+
+            let widthRatio = availableWidth / contentSize.width
+            let heightRatio = availableHeight / contentSize.height
+            let scale = min(widthRatio, heightRatio)
+            return CGSize(width: contentSize.width * scale, height: contentSize.height * scale)
+        }
+
+        private static func trimmedTexture(from texture: SKTexture) -> (SKTexture, CGSize) {
+            let cgImage = texture.cgImage()
+
+            guard let dataProvider = cgImage.dataProvider, let data = dataProvider.data, let bytes = CFDataGetBytePtr(data) else {
+                return (texture, texture.size())
+            }
+
+            let width = cgImage.width
+            let height = cgImage.height
+            let bytesPerPixel = 4
+            let bytesPerRow = cgImage.bytesPerRow
+
+            var minX = width
+            var minY = height
+            var maxX = 0
+            var maxY = 0
+
+            for y in 0..<height {
+                let rowStart = y * bytesPerRow
+                for x in 0..<width {
+                    let index = rowStart + x * bytesPerPixel
+                    let alpha = bytes[index + 3]
+                    if alpha > 5 {
+                        minX = min(minX, x)
+                        minY = min(minY, y)
+                        maxX = max(maxX, x)
+                        maxY = max(maxY, y)
+                    }
+                }
+            }
+
+            if maxX < minX || maxY < minY {
+                return (texture, texture.size())
+            }
+
+            let cropRect = CGRect(x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1)
+            guard let trimmedImage = cgImage.cropping(to: cropRect) else {
+                return (texture, texture.size())
+            }
+
+            let trimmedTexture = SKTexture(cgImage: trimmedImage)
+            return (trimmedTexture, CGSize(width: cropRect.width, height: cropRect.height))
         }
     }
 
