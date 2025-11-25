@@ -345,7 +345,10 @@ class InventoryScene: BaseScene {
     private func place(item: InventoryItemNode, at position: GridPosition) {
         item.gridPosition = position
         item.position = point(for: position, size: item.gridSize)
-        contentNode.addChild(item)
+        if item.parent !== contentNode {
+            item.removeFromParent()
+            contentNode.addChild(item)
+        }
         occupyCells(for: item, at: position)
     }
 
