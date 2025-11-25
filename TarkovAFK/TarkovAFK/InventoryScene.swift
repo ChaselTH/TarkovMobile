@@ -84,7 +84,7 @@ class InventoryScene: BaseScene {
 
         for row in 0..<rows {
             for column in 0..<columns {
-                let square = SKShapeNode(rectOf: CGSize(width: cellSize - 4, height: cellSize - 4), cornerRadius: 4)
+                let square = SKShapeNode(rectOf: CGSize(width: cellSize, height: cellSize), cornerRadius: 0)
                 square.fillColor = SKColor(red: 44/255, green: 47/255, blue: 56/255, alpha: 1)
                 square.strokeColor = SKColor(red: 85/255, green: 94/255, blue: 108/255, alpha: 1)
                 square.lineWidth = 1.5
