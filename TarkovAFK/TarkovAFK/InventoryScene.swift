@@ -1,6 +1,60 @@
 import SpriteKit
 
 class InventoryScene: BaseScene {
+    struct GridPosition: Equatable {
+        var column: Int
+        var row: Int
+    }
+
+    struct GridSize {
+        var width: Int
+        var height: Int
+    }
+
+    private class InventoryItemNode: SKNode {
+        let gridSize: GridSize
+        var gridPosition: GridPosition
+        private let sprite: SKSpriteNode
+        private let highlight: SKShapeNode
+
+        init(textureName: String, gridSize: GridSize, cellSize: CGFloat, gridPosition: GridPosition) {
+            self.gridSize = gridSize
+            self.gridPosition = gridPosition
+            sprite = SKSpriteNode(texture: SKTexture(imageNamed: textureName))
+            sprite.size = CGSize(width: cellSize * CGFloat(gridSize.width) - 6, height: cellSize * CGFloat(gridSize.height) - 6)
+            sprite.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+            sprite.zPosition = 10
+
+            highlight = SKShapeNode(rectOf: CGSize(width: sprite.size.width + 6, height: sprite.size.height + 6), cornerRadius: 4)
+            highlight.strokeColor = .white
+            highlight.lineWidth = 3
+            highlight.fillColor = .clear
+            highlight.isHidden = true
+            highlight.zPosition = 11
+
+            super.init()
+            addChild(sprite)
+            addChild(highlight)
+        }
+
+        required init?(coder aDecoder: NSCoder) {
+            fatalError("init(coder:) has not been implemented")
+        }
+
+        func setHighlighted(_ highlighted: Bool) {
+            highlight.isHidden = !highlighted
+        }
+
+        func setDraggingStyle(_ isDragging: Bool) {
+            alpha = isDragging ? 0.7 : 1
+        }
+
+        func updateSize(with cellSize: CGFloat) {
+            sprite.size = CGSize(width: cellSize * CGFloat(gridSize.width) - 6, height: cellSize * CGFloat(gridSize.height) - 6)
+            highlight.path = CGPath(roundedRect: CGRect(origin: .init(x: -sprite.size.width / 2 - 3, y: -sprite.size.height / 2 - 3), size: CGSize(width: sprite.size.width + 6, height: sprite.size.height + 6)), cornerWidth: 4, cornerHeight: 4, transform: nil)
+        }
+    }
+
     private let columns = 12
     private let rows = 60
     private var contentNode = SKNode()
@@ -17,6 +71,19 @@ class InventoryScene: BaseScene {
     private let scrollBarTrackHeightFactor: CGFloat = 1.0
     private var scrollBarTrack: SKShapeNode?
     private var scrollBarThumb: SKShapeNode?
+
+    private var gridCells: [[SKShapeNode]] = []
+    private var occupied: [[InventoryItemNode?]] = []
+    private var items: [InventoryItemNode] = []
+    private var selectedItem: InventoryItemNode?
+    private var draggingItem: InventoryItemNode?
+    private var dragOffset: CGPoint = .zero
+    private var originalGridPosition: GridPosition?
+    private var pendingGridPosition: GridPosition?
+    private var dropPreviewNodes: [SKShapeNode] = []
+
+    private var startX: CGFloat = 0
+    private var startY: CGFloat = 0
 
     private var scrollAreaHeight: CGFloat {
         size.height * 0.55
@@ -79,10 +146,14 @@ class InventoryScene: BaseScene {
         cropNode.addChild(contentNode)
 
         let gridWidth = cellSize * CGFloat(columns)
-        let startX = -gridWidth / 2 + cellSize / 2
-        let startY = contentHeight / 2 - cellSize / 2
+        startX = -gridWidth / 2 + cellSize / 2
+        startY = contentHeight / 2 - cellSize / 2
+
+        gridCells = []
+        occupied = Array(repeating: Array(repeating: nil, count: columns), count: rows)
 
         for row in 0..<rows {
+            var rowNodes: [SKShapeNode] = []
             for column in 0..<columns {
                 let square = SKShapeNode(rectOf: CGSize(width: cellSize, height: cellSize), cornerRadius: 0)
                 square.fillColor = SKColor(red: 44/255, green: 47/255, blue: 56/255, alpha: 1)
@@ -90,12 +161,15 @@ class InventoryScene: BaseScene {
                 square.lineWidth = 1.5
                 square.position = CGPoint(x: startX + CGFloat(column) * cellSize, y: startY - CGFloat(row) * cellSize)
                 contentNode.addChild(square)
+                rowNodes.append(square)
             }
+            gridCells.append(rowNodes)
         }
 
         contentNode.position = CGPoint(x: 0, y: scrollAreaHeight / 2 - contentHeight / 2)
 
         setupScrollBar()
+        addInitialItems()
     }
 
     private func clampedContentPosition(for desiredY: CGFloat) -> CGFloat {
@@ -175,6 +249,15 @@ class InventoryScene: BaseScene {
         super.touchesBegan(touches, with: event)
         guard let touch = touches.first else { return }
         let location = touch.location(in: self)
+        let contentLocation = convert(location, to: contentNode)
+
+        if let item = item(at: contentLocation) {
+            select(item)
+            beginDragging(item, touchLocation: contentLocation)
+            dragStartPoint = nil
+            return
+        }
+
         if location.y <= scrollAreaHeight {
             dragStartPoint = location
             contentStartY = contentNode.position.y
@@ -190,7 +273,19 @@ class InventoryScene: BaseScene {
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesMoved(touches, with: event)
-        guard let touch = touches.first, let start = dragStartPoint else { return }
+        guard let touch = touches.first else { return }
+
+        if let draggingItem = draggingItem {
+            let contentLocation = convert(touch.location(in: self), to: contentNode)
+            let targetCenter = CGPoint(x: contentLocation.x - dragOffset.x, y: contentLocation.y - dragOffset.y)
+            draggingItem.position = targetCenter
+            let proposedPosition = clampedGridPosition(gridPosition(for: draggingItem, centeredAt: targetCenter), for: draggingItem)
+            pendingGridPosition = proposedPosition
+            updateDropPreview(for: draggingItem, at: proposedPosition)
+            return
+        }
+
+        guard let start = dragStartPoint else { return }
         let location = touch.location(in: self)
         let deltaY = location.y - start.y
         let desiredY = contentStartY + deltaY
@@ -210,6 +305,11 @@ class InventoryScene: BaseScene {
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        if let draggingItem = draggingItem {
+            completeDrag(for: draggingItem)
+            return
+        }
+
         dragStartPoint = nil
         if abs(velocity) > 20 {
             isDecelerating = true
@@ -223,7 +323,168 @@ class InventoryScene: BaseScene {
     }
 
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        if let draggingItem = draggingItem {
+            revertDrag(for: draggingItem)
+        }
         scheduleHideScrollBar()
         super.touchesCancelled(touches, with: event)
+    }
+
+    private func addInitialItems() {
+        let moonshine = InventoryItemNode(textureName: "FierceMoonshine", gridSize: GridSize(width: 1, height: 2), cellSize: cellSize, gridPosition: GridPosition(column: 2, row: 2))
+        place(item: moonshine, at: moonshine.gridPosition)
+        items.append(moonshine)
+    }
+
+    private func point(for position: GridPosition, size: GridSize) -> CGPoint {
+        let centerX = startX + (CGFloat(position.column) + CGFloat(size.width) / 2 - 0.5) * cellSize
+        let centerY = startY - (CGFloat(position.row) + CGFloat(size.height) / 2 - 0.5) * cellSize
+        return CGPoint(x: centerX, y: centerY)
+    }
+
+    private func place(item: InventoryItemNode, at position: GridPosition) {
+        item.gridPosition = position
+        item.position = point(for: position, size: item.gridSize)
+        if item.parent == nil {
+            contentNode.addChild(item)
+        } else if item.parent !== contentNode {
+            item.removeFromParent()
+            contentNode.addChild(item)
+        }
+        occupyCells(for: item, at: position)
+    }
+
+    private func gridPosition(for item: InventoryItemNode, centeredAt point: CGPoint) -> GridPosition {
+        let colValue = (point.x - startX) / cellSize - (CGFloat(item.gridSize.width) / 2 - 0.5)
+        let rowValue = (startY - point.y) / cellSize - (CGFloat(item.gridSize.height) / 2 - 0.5)
+        return GridPosition(column: Int(round(colValue)), row: Int(round(rowValue)))
+    }
+
+    private func clampedGridPosition(_ position: GridPosition, for item: InventoryItemNode) -> GridPosition {
+        let maxColumn = columns - item.gridSize.width
+        let maxRow = rows - item.gridSize.height
+        let clampedColumn = min(max(position.column, 0), maxColumn)
+        let clampedRow = min(max(position.row, 0), maxRow)
+        return GridPosition(column: clampedColumn, row: clampedRow)
+    }
+
+    private func occupyCells(for item: InventoryItemNode, at position: GridPosition) {
+        for row in position.row..<(position.row + item.gridSize.height) {
+            for column in position.column..<(position.column + item.gridSize.width) {
+                occupied[row][column] = item
+                let cell = gridCells[row][column]
+                cell.strokeColor = .clear
+            }
+        }
+    }
+
+    private func clearCells(for item: InventoryItemNode) {
+        for row in 0..<rows {
+            for column in 0..<columns {
+                if occupied[row][column] === item {
+                    occupied[row][column] = nil
+                    let cell = gridCells[row][column]
+                    cell.strokeColor = SKColor(red: 85/255, green: 94/255, blue: 108/255, alpha: 1)
+                }
+            }
+        }
+    }
+
+    private func canPlace(item: InventoryItemNode, at position: GridPosition) -> Bool {
+        guard position.column >= 0, position.row >= 0 else { return false }
+        guard position.column + item.gridSize.width <= columns else { return false }
+        guard position.row + item.gridSize.height <= rows else { return false }
+
+        for row in position.row..<(position.row + item.gridSize.height) {
+            for column in position.column..<(position.column + item.gridSize.width) {
+                if let occupant = occupied[row][column], occupant !== item {
+                    return false
+                }
+            }
+        }
+        return true
+    }
+
+    private func item(at location: CGPoint) -> InventoryItemNode? {
+        for node in contentNode.nodes(at: location) {
+            if let item = node as? InventoryItemNode {
+                return item
+            }
+            if let parent = node.parent as? InventoryItemNode {
+                return parent
+            }
+        }
+        return nil
+    }
+
+    private func select(_ item: InventoryItemNode) {
+        selectedItem?.setHighlighted(false)
+        item.setHighlighted(true)
+        selectedItem = item
+    }
+
+    private func beginDragging(_ item: InventoryItemNode, touchLocation: CGPoint) {
+        draggingItem = item
+        dragOffset = CGPoint(x: touchLocation.x - item.position.x, y: touchLocation.y - item.position.y)
+        originalGridPosition = item.gridPosition
+        pendingGridPosition = item.gridPosition
+        item.setDraggingStyle(true)
+        clearCells(for: item)
+        updateDropPreview(for: item, at: item.gridPosition)
+    }
+
+    private func completeDrag(for item: InventoryItemNode) {
+        guard let target = pendingGridPosition else {
+            revertDrag(for: item)
+            return
+        }
+
+        if canPlace(item: item, at: target) {
+            place(item: item, at: target)
+        } else if let original = originalGridPosition {
+            place(item: item, at: original)
+        }
+
+        endDragging(item)
+    }
+
+    private func revertDrag(for item: InventoryItemNode) {
+        if let original = originalGridPosition {
+            place(item: item, at: original)
+        }
+        endDragging(item)
+    }
+
+    private func endDragging(_ item: InventoryItemNode) {
+        item.setDraggingStyle(false)
+        clearDropPreview()
+        draggingItem = nil
+        originalGridPosition = nil
+        pendingGridPosition = nil
+    }
+
+    private func updateDropPreview(for item: InventoryItemNode, at position: GridPosition) {
+        clearDropPreview()
+        let isValid = canPlace(item: item, at: position)
+        let color = isValid ? SKColor.green.withAlphaComponent(0.35) : SKColor.red.withAlphaComponent(0.35)
+
+        for row in position.row..<(position.row + item.gridSize.height) {
+            for column in position.column..<(position.column + item.gridSize.width) {
+                let preview = SKShapeNode(rectOf: CGSize(width: cellSize - 4, height: cellSize - 4), cornerRadius: 3)
+                preview.fillColor = color
+                preview.strokeColor = .clear
+                preview.position = CGPoint(x: startX + CGFloat(column) * cellSize, y: startY - CGFloat(row) * cellSize)
+                preview.zPosition = 9
+                contentNode.addChild(preview)
+                dropPreviewNodes.append(preview)
+            }
+        }
+    }
+
+    private func clearDropPreview() {
+        for node in dropPreviewNodes {
+            node.removeFromParent()
+        }
+        dropPreviewNodes.removeAll()
     }
 }
