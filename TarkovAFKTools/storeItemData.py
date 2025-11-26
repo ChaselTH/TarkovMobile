@@ -4,7 +4,7 @@ import re
 from bs4 import BeautifulSoup
 
 # ========== 1. 读取本地 HTML 文件 ==========
-html_path = os.path.join(os.getcwd(), "img.html")
+html_path = os.path.join(os.getcwd(), "item_data.html")
 if not os.path.exists(html_path):
     raise FileNotFoundError(f"未找到本地文件: {html_path}")
 
