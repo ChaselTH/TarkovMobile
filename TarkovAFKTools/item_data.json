@@ -1,0 +1,8 @@
+[
+  {
+    "name": "黑麦面包块",
+    "type": "food",
+    "hydration": -10,
+    "energy": 20
+  }
+]
