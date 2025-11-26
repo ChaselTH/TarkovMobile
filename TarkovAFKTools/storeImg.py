@@ -4,7 +4,7 @@ import requests
 from bs4 import BeautifulSoup
 
 # ========== 1. 读取本地 HTML 文件 ==========
-html_path = os.path.join(os.getcwd(), "img.html")
+html_path = os.path.join(os.getcwd(), "item_data.html")
 with open(html_path, "r", encoding="utf-8") as f:
     html = f.read()
 

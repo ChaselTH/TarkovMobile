@@ -1,0 +1,248 @@
+[
+  {
+    "name": "军用饼干",
+    "type": "food",
+    "hydration": -5,
+    "energy": 10
+  },
+  {
+    "name": "黑麦面包块",
+    "type": "food",
+    "hydration": -10,
+    "energy": 20
+  },
+  {
+    "name": "Emelya黑麦面包块",
+    "type": "food",
+    "hydration": -10,
+    "energy": 10
+  },
+  {
+    "name": "士腻架能量棒",
+    "type": "food",
+    "hydration": -15,
+    "energy": 30
+  },
+  {
+    "name": "方便面",
+    "type": "food",
+    "hydration": -10,
+    "energy": 25
+  },
+  {
+    "name": "塔克肉干",
+    "type": "food",
+    "hydration": -5,
+    "energy": 55
+  },
+  {
+    "name": "Devildog蛋黄酱",
+    "type": "food",
+    "hydration": -99,
+    "energy": 100
+  },
+  {
+    "name": "Alyonka巧克力棒",
+    "type": "food",
+    "hydration": -15,
+    "energy": 35
+  },
+  {
+    "name": "一盒燕麦片",
+    "type": "food",
+    "hydration": -13,
+    "energy": 40
+  },
+  {
+    "name": "一包糖",
+    "type": "food",
+    "hydration": -45,
+    "energy": 70
+  },
+  {
+    "name": "咸狗牛肉肠",
+    "type": "food",
+    "hydration": -5,
+    "energy": 50
+  },
+  {
+    "name": "炖牛肉罐头",
+    "type": "food",
+    "hydration": -5,
+    "energy": 45
+  },
+  {
+    "name": "太平洋秋刀鱼罐头",
+    "type": "food",
+    "hydration": -2,
+    "energy": 48
+  },
+  {
+    "name": "Humpback鲑鱼罐头",
+    "type": "food",
+    "hydration": -5,
+    "energy": 50
+  },
+  {
+    "name": "鲱鱼罐头",
+    "type": "food",
+    "hydration": -3,
+    "energy": 47
+  },
+  {
+    "name": "西鲱鱼罐头",
+    "type": "food",
+    "hydration": -5,
+    "energy": 55
+  },
+  {
+    "name": "炼乳罐头",
+    "type": "food",
+    "hydration": -65,
+    "energy": 75
+  },
+  {
+    "name": "豌豆罐头",
+    "type": "food",
+    "hydration": 5,
+    "energy": 35
+  },
+  {
+    "name": "炖美味牛肉罐头（大）",
+    "type": "food",
+    "hydration": -5,
+    "energy": 50
+  },
+  {
+    "name": "罐装蔬菜泥",
+    "type": "food",
+    "hydration": null,
+    "energy": 40
+  },
+  {
+    "name": "Iskra（“火花”）单兵口粮",
+    "type": "food",
+    "hydration": null,
+    "energy": 80
+  },
+  {
+    "name": "MRE个人即食口粮",
+    "type": "food",
+    "hydration": null,
+    "energy": 70
+  },
+  {
+    "name": "应急用水",
+    "type": "drink",
+    "hydration": 50,
+    "energy": 5
+  },
+  {
+    "name": "热棒",
+    "type": "drink",
+    "hydration": 20,
+    "energy": 10
+  },
+  {
+    "name": "冰绿茶",
+    "type": "drink",
+    "hydration": 15,
+    "energy": null
+  },
+  {
+    "name": "塔可乐",
+    "type": "drink",
+    "hydration": 15,
+    "energy": 5
+  },
+  {
+    "name": "Max Energy能量饮料",
+    "type": "drink",
+    "hydration": 20,
+    "energy": 12
+  },
+  {
+    "name": "罐装六可乐",
+    "type": "drink",
+    "hydration": 20,
+    "energy": 20
+  },
+  {
+    "name": "苹果汁",
+    "type": "drink",
+    "hydration": 25,
+    "energy": 5
+  },
+  {
+    "name": "西柚汁",
+    "type": "drink",
+    "hydration": 30,
+    "energy": 6
+  },
+  {
+    "name": "Vita果汁",
+    "type": "drink",
+    "hydration": 28,
+    "energy": 8
+  },
+  {
+    "name": "Russian Army菠萝汁",
+    "type": "drink",
+    "hydration": 30,
+    "energy": 8
+  },
+  {
+    "name": "一盒牛奶",
+    "type": "drink",
+    "hydration": 30,
+    "energy": 20
+  },
+  {
+    "name": "0.6升瓶装水",
+    "type": "drink",
+    "hydration": 60,
+    "energy": null
+  },
+  {
+    "name": "“诺文斯基核动力”金牌格瓦斯600毫升装",
+    "type": "drink",
+    "hydration": 65,
+    "energy": 15
+  },
+  {
+    "name": "Aquamari带滤嘴水瓶",
+    "type": "drink",
+    "hydration": 100,
+    "energy": 20
+  },
+  {
+    "name": "瓶装 Pevko 淡啤酒",
+    "type": "drink",
+    "hydration": 40,
+    "energy": 10
+  },
+  {
+    "name": "Tarkovskaya瓶装伏特加",
+    "type": "drink",
+    "hydration": -50,
+    "energy": null
+  },
+  {
+    "name": "Dan Jackiel瓶装威士忌",
+    "type": "drink",
+    "hydration": -35,
+    "energy": 10
+  },
+  {
+    "name": "纯净水",
+    "type": "drink",
+    "hydration": 100,
+    "energy": 25
+  },
+  {
+    "name": "“凶狠跑刀崽”私酒",
+    "type": "drink",
+    "hydration": -10,
+    "energy": 20
+  }
+]

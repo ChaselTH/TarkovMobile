@@ -9,7 +9,9 @@ __pycache__/
 .venv
 
 *.html
-
+*.cvs
+*.webp
+*.png
 
 # vscode
 .vscode/
