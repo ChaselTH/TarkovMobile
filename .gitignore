@@ -7,11 +7,9 @@ __pycache__/
 *.pyc
 .env
 .venv
-<<<<<<< HEAD
+
 *.html
-=======
-.html
->>>>>>> 8f20cdd66bac72fe59a11f6f8a07960bb562b46e
+
 
 # vscode
 .vscode/
