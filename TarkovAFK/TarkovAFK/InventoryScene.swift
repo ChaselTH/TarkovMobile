@@ -156,7 +156,7 @@ class InventoryScene: BaseScene {
     private var startY: CGFloat = 0
 
     private var scrollAreaHeight: CGFloat {
-        size.height * 0.55
+        size.height * 0.45
     }
 
     private var cellSize: CGFloat {
